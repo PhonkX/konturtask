@@ -9,7 +9,7 @@ namespace kontur
 {
     class Card
     {
-        public string rank
+        public int rank
         {
             get;
         }
@@ -22,9 +22,9 @@ namespace kontur
         {
             get;
         }
-        public string calledColor; //public?
-        public string calledRank;
-        public Card(string rank1, string color1)
+        public string calledColor = ""; //public?
+        public int calledRank = -1;
+        public Card(int rank1, string color1)
         {
             rank = rank;
             color = color1;
@@ -33,14 +33,14 @@ namespace kontur
 
     class Deck
     {
-        private Queue<Card> Cards;
+        private Queue<Card> сards;
         public void AddCardToDeck(Card card)
         {
-            Cards.Enqueue(card);
+            сards.Enqueue(card);
         }
         public Card GiveTopCardToPlayer()
         {
-            return Cards.Dequeue();
+            return сards.Dequeue();
         }
     }
 
@@ -52,11 +52,11 @@ namespace kontur
         {
             hand.Add(card);
         }
-        public Card PutCardOnDeck(int position) //или put to?
+        public Card PlayCard(int position) //или put to?
         {
             return hand[position];
         }
-        public void LearnCardRank(string rank, int position)
+        public void LearnCardRank(int rank, int position)
         {
             hand[position].calledRank = rank;
         }
@@ -68,6 +68,22 @@ namespace kontur
         {
             hand.RemoveAt(position);
         }
+        public bool DoesOthePlayerTellTruthAboutCard(int cardPosition)
+        {
+            var card = hand[cardPosition];
+            if (card.calledRank != -1 && card.rank != card.calledRank)
+                return false;
+            if (card.calledColor != "" && card.color != card.calledColor)
+                return false;
+            return true;
+        }
+
+       /* public string TellAllCardInHand()
+        {
+            string result = "";
+            foreach(var card in hand)
+                result += card
+        }*/
     }
 
     class Table
@@ -85,10 +101,41 @@ namespace kontur
         {
             cards.Add(card);
         }
-        /*public bool CanCardBePlaced(Card card)
+        public bool CanCardBePlaced(Card card) //нет ли так дублирования кода?
         {
-            
+            var sameColorCards = cards.Where(x => x.color == card.color).OrderBy(x => x.rank);
+            if (sameColorCards.Count() == 0)
+            {
+                if (card.rank == 1)
+                    return true;
+            }
+            else if (sameColorCards.Last().rank == card.rank - 1)
+                    return true;
+                else
+                    return false;
+            return false; //Почему он считает, что не везде есть возврат?
+        }
+        /*public List<Card> GetAllCardsWithTheSameColor(string color)
+        {
+            return cards.Where(card => card.color == color).ToList();
+        }
+        public List<Card> GetAllCardsWithPreviousRank(int rank)
+        {
+            return cards.Where(card => card.rank == rank).ToList();
         }*/
+        public int GetCardsWithTheSameColorCount(string color)
+        {
+            return cards.Where(card => card.color == color).Count();
+        }
+        public int GetCardsWithPreviousRankCount(int rank)
+        {
+            return cards.Where(card => card.rank == rank).Count();
+        }
+
+        public int PlayedCardsCount()
+        {
+            return cards.Count;
+        }
     }
 
     class Game
@@ -97,6 +144,7 @@ namespace kontur
         Table table = new Table();
         Deck deck = new Deck();
         int turnCount;
+        int rickTurnsCount = 0;
         bool gameIsOver = false;
 
         public Game()
@@ -119,6 +167,7 @@ namespace kontur
 
         public void MakeTurn(string command) //private?
         {
+            var currentPlayer = players[turnCount % 2];
             var commandElements = command.Split(' ');
             if (command.Contains("Tell"))
             {
@@ -130,7 +179,12 @@ namespace kontur
                     for (int i = rankStartPosition; i < commandElements.Length; ++i)
                     {
                         //посмотреть, где объявляется ранг
-                        players[turnCount % 2].LearnCardRank(commandElements[rankPosition], int.Parse(commandElements[i]));
+                        currentPlayer.LearnCardRank(int.Parse(commandElements[rankPosition]), int.Parse(commandElements[i]));
+                        if (!currentPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                        {
+                            gameIsOver = true;
+                            break;
+                        }
                     }
                 }
 
@@ -142,19 +196,31 @@ namespace kontur
                     for (int i = colorStartPosition; i < commandElements.Length; ++i)
                     {
                         //посмотреть, где объявляется цвет
-                        players[turnCount % 2].LearnCardColor(commandElements[colorPositionInCommand], int.Parse(commandElements[i]));
+                        currentPlayer.LearnCardColor(commandElements[colorPositionInCommand], int.Parse(commandElements[i]));
+                        if (!currentPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                        {
+                            gameIsOver = true;
+                            break;
+                        }
                     }
+                }
+                if (command.Contains("Play"))
+                {
+                    var cardPositionInCommand = 2;
+                    var card = currentPlayer.PlayCard(cardPositionInCommand);
+                    CheckPlayForCorrestnessAndRisk(card);
+                    table.AddCardToTable(card);
                 }
             }
 
             if (command.Contains("Drop"))
             {
                 var cardPosition = 2; //Drop card ...
-                players[turnCount % 2].DropCard(int.Parse(commandElements[cardPosition])); 
+                currentPlayer.DropCard(int.Parse(commandElements[cardPosition])); 
             }
 
-            CheckTurnForCorrectnessAndRisk(); //сюда ли?
-
+            // CheckTurnForCorrectnessAndRisk(); //сюда ли?
+            WriteInformation();
         }
 
         public void GameProcess(string command) //надо ли этот метод?
@@ -168,9 +234,40 @@ namespace kontur
 
         }
 
-        private void CheckTurnForCorrectnessAndRisk()
+        /*private void CheckTurnForCorrectnessAndRisk()
         {
             
+        }*/
+
+        private void CheckPlayForCorrestnessAndRisk(Card card)
+        {
+            if (!table.CanCardBePlaced(card))
+            {
+                gameIsOver = true;
+                return;
+            }
+            bool isTurnRisk = false;
+            if (card.calledRank == -1 && table.GetCardsWithPreviousRankCount(card.rank) != 5)
+                isTurnRisk = true;
+            if (card.calledColor == "" && table.GetCardsWithTheSameColorCount(card.color) != 0)
+                isTurnRisk = true;
+            if (isTurnRisk)
+                rickTurnsCount++;
+                
+
+            /*
+                в каких ситуациях нет риска?
+                мы знаем карту целиком
+                мы знаем достоинство карты, а на столе есть карты всех цветов достоинством на одно ниже
+                мы знаем цвет, а на столе нет карт такого цвета
+            */
+
+        }
+
+        private void WriteInformation()
+        {
+            Console.WriteLine("Turn: {0}, cards: {1}, with risk: {2}",
+                              turnCount, table.PlayedCardsCount(), rickTurnsCount);
         }
     }
 
@@ -182,24 +279,28 @@ namespace kontur
             switch (cardAbbreviation[0])
             {
                 case 'R':
-                    color = "red";
+                    color = "Red";
                     break;
                 case 'Y':
-                    color = "yellow";
+                    color = "Yellow";
                     break;
                 case 'B':
-                    color = "blue";
+                    color = "Blue";
                     break;
                 case 'G':
-                    color = "green";
+                    color = "Green";
                     break;
                 case 'W':
-                    color = "white";
+                    color = "White";
                     break;
                 default: break;
                  
             }
-            return new Card(color, cardAbbreviation[1].ToString());
+            return new Card(cardAbbreviation[1], color);
+        }
+        static public string GetAbbreviationFromCard(Card card)
+        {
+            return card.color[0] + card.rank.ToString();
         }
     }
 

@@ -1,1 +1,6 @@
 c:\users\phonkx\documents\visual studio 2015\Projects\kontur\kontur\bin\Debug\kontur.exe.config
+C:\Users\PhonkX\Documents\Visual Studio 2015\Projects\kontur\kontur\bin\Debug\kontur.exe
+C:\Users\PhonkX\Documents\Visual Studio 2015\Projects\kontur\kontur\bin\Debug\kontur.pdb
+C:\Users\PhonkX\Documents\Visual Studio 2015\Projects\kontur\kontur\obj\Debug\kontur.csprojResolveAssemblyReference.cache
+C:\Users\PhonkX\Documents\Visual Studio 2015\Projects\kontur\kontur\obj\Debug\kontur.exe
+C:\Users\PhonkX\Documents\Visual Studio 2015\Projects\kontur\kontur\obj\Debug\kontur.pdb

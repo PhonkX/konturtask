@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-//using System.Text.RegularExpressions;
 
 namespace kontur
 {
@@ -15,16 +14,12 @@ namespace kontur
         {
             get;
         }
-        // public string rank;
-        /* public string Rank
-         {
-             get { return rank;  }
-         }*/
+
         public string color
         {
             get;
         }
-        public string calledColor = ""; //public?
+        public string calledColor = "";
         public int calledRank = -1;
 
         private List<string> unavailableColors = new List<string>();
@@ -79,15 +74,6 @@ namespace kontur
             }
         }
 
-        /*public bool IsColorUnvailable(string color)
-        {
-            return unavailableColors.Contains(color);
-        }
-
-        public bool IsRankUnavailable(int rank)
-        {
-            return unavailableRanks.Contains(rank);
-        }*/
         public List<string> GetAvailableColors()
         {
             List<string> availableColors = new List<string>();
@@ -120,19 +106,16 @@ namespace kontur
         private List<Card> hand = new List<Card>();
         private int maxHandSize = 5;
         public Player() { }
-       // Deck deck = new Deck();
         public Player(Deck deck)
         {
-            //deck = deck1;
             for (int i = 0; i < maxHandSize; ++i)
                 TakeCardFromDeck(deck.GiveTopCardToPlayer());
         }
-       // private List<Card> calledCards;
-        public void TakeCardFromDeck(Card card) //private? GetCard?
+        public void TakeCardFromDeck(Card card)
         {
             hand.Add(card);
         }
-        public Card PlayCard(int position, Deck deck) //или put to?
+        public Card PlayCard(int position, Deck deck)
         {
             var card = hand[position];
             hand.RemoveAt(position);
@@ -192,12 +175,7 @@ namespace kontur
             foreach (var card in hand)
                 card.TryAddRealRank();
         }
-        /* public string TellAllCardInHand()
-         {
-             string result = "";
-             foreach(var card in hand)
-                 result += card
-         }*/
+
         public int GetSameColorCardsCount(string color)
         {
             return hand.Where(card => card.color == color).Count();
@@ -237,31 +215,15 @@ namespace kontur
                     return false;
             return false; //Почему он считает, что не везде есть возврат?
         }
-        /*public List<Card> GetAllCardsWithTheSameColor(string color)
-        {
-            return cards.Where(card => card.color == color).ToList();
-        }
-        public List<Card> GetAllCardsWithPreviousRank(int rank)
-        {
-            return cards.Where(card => card.rank == rank).ToList();
-        }*/
+
         public int GetSameColorCardsCount(string color)
         {
             return cards.Where(card => card.color == color).Count();
-            /*int count = 0;
-            foreach (var card in cards)
-                if (card.color == color)
-                    count++;
-            return count;*/
+
         }
         public int GetCardsWithPreviousRankCount(int rank)
         {
            return cards.Where(card => card.rank == rank).Count();
-           /* int count = 0;
-            foreach (var card in cards)
-                if (card.rank == rank)
-                    count++;
-            return count;*/
         }
 
         public int PlayedCardsCount()
@@ -272,9 +234,7 @@ namespace kontur
 
     class Game
     {
-        // Player[] players = { new Player(), new Player() };
         Player[] players = new Player[2];
-        //Player currentPlayer = new Player();
         Table table = new Table();
         Deck deck = new Deck();
         int turnCount;
@@ -289,8 +249,6 @@ namespace kontur
         public Game(string startCommand)
         {
             turnCount = 0;
-            // Regex CardRankAndColorRegEx = new Regex("[RGBYW][1-5]");
-            // var cards = CardRankAndColorRegEx.Matches(startCommand);
             var cards = startCommand.Split(' ');          
             const int cardStartPosition = 5; //в строке "Start new game with new deck ..." 5 слов =)  
             for (int i = cardStartPosition; i < cards.Length; ++i)
@@ -301,9 +259,9 @@ namespace kontur
             players[1] = new Player(deck);
         }
 
-        public void MakeTurn(string command) //private?
+        private void MakeTurn(string command)
         {
-            var currentPlayer = players[turnCount% 2];
+            var currentPlayer = players[turnCount % 2];
             var nextPlayer = players[(turnCount + 1) % 2];
             turnCount++;
             var commandElements = command.Split(' ');
@@ -311,63 +269,150 @@ namespace kontur
             {
                 if (command.Contains("rank"))
                 {
-                    const int rankPosition = 2;
-                    const int rankStartPosition = 5; //посмотреть, откуда начинается // внезапно, тоже с 6-ой позиции
-                    int rank = int.Parse(commandElements[rankPosition]);
-                    for (int i = rankStartPosition; i < commandElements.Length; ++i)
-                    {
-                        nextPlayer.LearnCardRank(rank, int.Parse(commandElements[i]));
-                        if (nextPlayer.GetSameRankCardsCount(rank) != commandElements.Length - rankStartPosition ||
-                            !nextPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
-                        {
-                            endGame();
-                            break;
-                        }
-                        
-                    }
-                    nextPlayer.AddUnavailableRankToCards(rank);
-                    nextPlayer.TryKnowRealCardRanks();
+                    TellRankCommand(commandElements, nextPlayer);
                 }
-
                 if (command.Contains("color"))
                 {
-                    //var colors = command.Split(' ');
-                    const int colorPositionInCommand = 2; //подумать над названием
-                    const int colorStartPosition = 5; //посмотреть, откуда начинается 
-                    var color = commandElements[colorPositionInCommand];
-                    for (int i = colorStartPosition; i < commandElements.Length; ++i)
-                    {
-                        //посмотреть, где объявляется цвет
-                        nextPlayer.LearnCardColor(color, int.Parse(commandElements[i]));
-                        if (nextPlayer.GetSameColorCardsCount(color) != commandElements.Length - colorStartPosition|| 
-                            !nextPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
-                        {
-                            endGame();
-                            break;
-                        }
-                        
-                    }
-                    nextPlayer.AddUnavailableColorToCards(color);
-                    nextPlayer.TryKnowRealCardColors();
+                    TellColorCommand(commandElements, nextPlayer);
                 }
-               
-
             }
             if (command.Contains("Play"))
             {
-                var cardPositionInCommand = 2;
-                var card = currentPlayer.PlayCard(int.Parse(commandElements[cardPositionInCommand]), deck);
-                CheckPlayForCorrectnessAndRisk(card);
-                table.AddCardToTable(card);
+                PlayCommand(commandElements, currentPlayer);
             }
+
             if (command.Contains("Drop"))
             {
-                var cardPosition = 2; //Drop card ...
-                currentPlayer.DropCard(int.Parse(commandElements[cardPosition]), deck); 
+                DropCommand(commandElements, currentPlayer);
             }
-            // CheckTurnForCorrectnessAndRisk(); //сюда ли?
-           // WriteItwnformation();
-            //TODO: проверить обновлённый розыгрыш карты
+                /* var currentPlayer = players[turnCount% 2];
+                 var nextPlayer = players[(turnCount + 1) % 2];
+                 turnCount++;
+                 var commandElements = command.Split(' ');
+                 if (command.Contains("Tell"))
+                 {
+                     if (command.Contains("rank"))
+                     {
+                         const int rankPosition = 2;
+                         const int rankStartPosition = 5; //посмотреть, откуда начинается // внезапно, тоже с 6-ой позиции
+                         int rank = int.Parse(commandElements[rankPosition]);
+                         for (int i = rankStartPosition; i < commandElements.Length; ++i)
+                         {
+                             nextPlayer.LearnCardRank(rank, int.Parse(commandElements[i]));
+                             if (nextPlayer.GetSameRankCardsCount(rank) != commandElements.Length - rankStartPosition ||
+                                 !nextPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                             {
+                                 endGame();
+                                 break;
+                             }
+
+                         }
+                         nextPlayer.AddUnavailableRankToCards(rank);
+                         nextPlayer.TryKnowRealCardRanks();
+                     }
+
+                     if (command.Contains("color"))
+                     {
+
+                         const int colorPositionInCommand = 2; //подумать над названием
+                         const int colorStartPosition = 5;
+                         var color = commandElements[colorPositionInCommand];
+                         for (int i = colorStartPosition; i < commandElements.Length; ++i)
+                         {
+                             nextPlayer.LearnCardColor(color, int.Parse(commandElements[i]));
+                             if (nextPlayer.GetSameColorCardsCount(color) != commandElements.Length - colorStartPosition|| 
+                                 !nextPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                             {
+                                 endGame();
+                                 break;
+                             }
+
+                         }
+                         nextPlayer.AddUnavailableColorToCards(color);
+                         nextPlayer.TryKnowRealCardColors();
+                     }
+
+
+                 }
+                 if (command.Contains("Play"))
+                 {
+                     var cardPositionInCommand = 2;
+                     var card = currentPlayer.PlayCard(int.Parse(commandElements[cardPositionInCommand]), deck);
+                     if (IsPlayCorrect(card))
+                     {
+                         if (IsTurnRisk(card))
+                             rickTurnsCount++;
+                         table.AddCardToTable(card);
+                     }
+                     else
+                         endGame();
+                 }
+                 if (command.Contains("Drop"))
+                 {
+                     var cardPosition = 2; //Drop card ...
+                     currentPlayer.DropCard(int.Parse(commandElements[cardPosition]), deck); 
+                 }*/
+
+         }
+
+        public void TellRankCommand(string[] commandElements, Player nextPlayer)
+        {
+            const int rankPosition = 2;
+            const int rankStartPosition = 5; //посмотреть, откуда начинается // внезапно, тоже с 6-ой позиции
+            int rank = int.Parse(commandElements[rankPosition]);
+            for (int i = rankStartPosition; i < commandElements.Length; ++i)
+            {
+                nextPlayer.LearnCardRank(rank, int.Parse(commandElements[i]));
+                if (nextPlayer.GetSameRankCardsCount(rank) != commandElements.Length - rankStartPosition ||
+                    !nextPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                {
+                    endGame();
+                    break;
+                }
+
+            }
+            nextPlayer.AddUnavailableRankToCards(rank);
+            nextPlayer.TryKnowRealCardRanks();
+        }
+
+        public void TellColorCommand(string[] commandElements, Player nextPlayer)
+        {
+            const int colorPositionInCommand = 2; //подумать над названием
+            const int colorStartPosition = 5;
+            var color = commandElements[colorPositionInCommand];
+            for (int i = colorStartPosition; i < commandElements.Length; ++i)
+            {
+                nextPlayer.LearnCardColor(color, int.Parse(commandElements[i]));
+                if (nextPlayer.GetSameColorCardsCount(color) != commandElements.Length - colorStartPosition ||
+                    !nextPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                {
+                    endGame();
+                    break;
+                }
+
+            }
+            nextPlayer.AddUnavailableColorToCards(color);
+            nextPlayer.TryKnowRealCardColors();
+        }
+
+        public void PlayCommand(string[] commandElements, Player currentPlayer)
+        {
+            var cardPositionInCommand = 2;
+            var card = currentPlayer.PlayCard(int.Parse(commandElements[cardPositionInCommand]), deck);
+            if (IsPlayCorrect(card))
+            {
+                if (IsTurnRisk(card))
+                    rickTurnsCount++;
+                table.AddCardToTable(card);
+            }
+            else
+                endGame();
+        }
+
+        public void DropCommand(string[] commandElements, Player currentPlayer)
+        {
+            var cardPosition = 2; //Drop card ...
+            currentPlayer.DropCard(int.Parse(commandElements[cardPosition]), deck);
         }
 
         public void GameProcess(string command) //надо ли этот метод?
@@ -380,27 +425,18 @@ namespace kontur
                     endGame();
                 }
             }
-                //WriteGameInformation();
+        
         }
 
-        /*private void CheckTurnForCorrectnessAndRisk()
+        private bool IsPlayCorrect(Card card)
         {
-            
-        }*/
-        //когда дека пустая, игра тоже заканчивается
+            return table.CanCardBePlaced(card);
+        }
 
-        private void CheckPlayForCorrectnessAndRisk(Card card)
+        private bool IsTurnRisk(Card card)
         {
-            if (!table.CanCardBePlaced(card))
-            {
-                endGame();
-                return;
-            }
             bool isTurnRisk = true;
-            /*if (card.calledRank == -1 && table.GetCardsWithPreviousRankCount(card.rank) != 5 && card.rank != 1)
-                isTurnRisk = true;
-            if (card.calledColor == "" && table.GetSameColorCardsCount(card.color) != 0)
-                isTurnRisk = true;*/
+
             if (card.calledRank == 1 && table.PlayedCardsCount() == 0)
                 isTurnRisk = false;
             if (card.calledRank != -1)
@@ -428,20 +464,10 @@ namespace kontur
                     }
                 }
             }
-            if (isTurnRisk)
-                rickTurnsCount++;
-                
-
-            /*
-                в каких ситуациях нет риска?
-                мы знаем карту целиком
-                мы знаем достоинство карты, а на столе есть карты всех цветов достоинством на одно ниже
-                мы знаем цвет, а на столе нет карт такого цвета
-            */
-
+          
+            return isTurnRisk;
         }
-
-
+     
         private void endGame()
         {
             if (!gameIsOver) //подумать, как обойтись без этой проверки!
@@ -496,7 +522,6 @@ namespace kontur
     {
         static void Main(string[] args)
         {
-            //Console.WriteLine(int.Parse("R1"[1].ToString()));
             Game game = new Game();
             string command;
             while ((command = Console.ReadLine()) != null)

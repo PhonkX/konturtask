@@ -244,49 +244,60 @@ namespace kontur
             var currentPlayer = players[turnCount % 2];
             var nextPlayer = players[(turnCount + 1) % 2];
             turnCount++;
-            var commandElements = command.Split(' ');//strange naming
+           // var commandElements = command.Split(' ');//strange naming
 
             if (command.Contains("Tell"))
             {
                 if (command.Contains("rank"))
                 {
-                    turnStatus = TellRankCommand(commandElements, nextPlayer);
+                    /*const int rankPositionInCommand = 2;//too short, can't understand what it does
+                    const int positionWhereCardsStartInCommand = 5; // Tell rank <...> for cards <...>
+                    int rank = int.Parse(commandElements[rankPositionInCommand]);*/
+                    var rankAndCardsPositionsInHand = CardParser.GetRankAndCardsPositions(command);
+                    var rank = rankAndCardsPositionsInHand.Item1;
+                    var positions = rankAndCardsPositionsInHand.Item2;
+                    turnStatus = TellRankCommand(rank, positions, nextPlayer);
                 }
                 if (command.Contains("color"))
                 {
-                    turnStatus = TellColorCommand(commandElements, nextPlayer);
+                    var colorAndCardsPositionsInHand = CardParser.GetColorAndCardsPositions(command);
+                    var color = colorAndCardsPositionsInHand.Item1;
+                    var positions = colorAndCardsPositionsInHand.Item2; //TODO: подумать над названиями переменных!
+                    turnStatus = TellColorCommand(color, positions, nextPlayer); 
                 }
             }
 
             if (command.Contains("Play"))
             {
-                turnStatus = PlayCommand(commandElements, currentPlayer);
+                var cardPositionInHand = CardParser.GetCardPosition(command);
+                turnStatus = PlayCommand(cardPositionInHand, currentPlayer);
             }
 
             if (command.Contains("Drop"))
             {
-                DropCommand(commandElements, currentPlayer);
+                var cardPositionInHand = CardParser.GetCardPosition(command);
+                DropCommand(cardPositionInHand, currentPlayer);
             }
             return turnStatus;
         }
 
         // public void TellRankCommand(string[] commandElements, Player targetPlayer)
         //public int TellRankCommand(string[] commandElements, Player targetPlayer)//передавать ранг и карты вместо строки
-        private string TellRankCommand(string[] commandElements, Player targetPlayer)
+        private string TellRankCommand(int rank, List<int> cardsPositionsInHand, Player targetPlayer)
         {
-            const int rankPositionInCommand = 2;//too short, can't understand what it does
+            /*const int rankPositionInCommand = 2;//too short, can't understand what it does
             const int positionWhereCardsStartInCommand = 5; // Tell rank <...> for cards <...>
-            int rank = int.Parse(commandElements[rankPositionInCommand]);
-            int cardsInCommandCount = commandElements.Length - positionWhereCardsStartInCommand;
+            int rank = int.Parse(commandElements[rankPositionInCommand]);*/
+            int cardsInCommandCount = cardsPositionsInHand.Count();
             if (targetPlayer.GetSameRankCardsCount(rank) != cardsInCommandCount)
             {
                 endGame();
                 return "Bad turn";
             }
-            for (int i = positionWhereCardsStartInCommand; i < commandElements.Length; ++i)
+            for (int i = 0; i < cardsInCommandCount; ++i)
             {
-                targetPlayer.LearnCardRank(rank, int.Parse(commandElements[i]));   
-                if (!targetPlayer.AreCalledCardCharacteristicsTrue(int.Parse(commandElements[i])))
+                targetPlayer.LearnCardRank(rank, cardsPositionsInHand[i]);   
+                if (!targetPlayer.AreCalledCardCharacteristicsTrue(cardsPositionsInHand[i]))
                 {
                     endGame();
                     //break;
@@ -300,21 +311,21 @@ namespace kontur
 
         //public void TellColorCommand(string[] commandElements, Player targetPlayer)//we can call player as currentplayer //smth done
         //public int TellColorCommand(string[] commandElements, Player targetPlayer)
-        private string TellColorCommand(string[] commandElements, Player targetPlayer)
+        private string TellColorCommand(string color, List<int> cardsPositionsInHand, Player targetPlayer)
         {
-            const int colorPositionInCommand = 2; //Tell color <Color> for cards <...>
+            /*const int colorPositionInCommand = 2; //Tell color <Color> for cards <...>
             const int positionWhereCardsStartInCommand = 5;
-            var color = commandElements[colorPositionInCommand];
-            int cardsInCommandCount = commandElements.Length - positionWhereCardsStartInCommand;
+            var color = commandElements[colorPositionInCommand];*/
+            int cardsInCommandCount = cardsPositionsInHand.Count();
             if (targetPlayer.GetSameColorCardsCount(color) != cardsInCommandCount)
             {
                 endGame();
                 return "Bad turn";
             }
-            for (int i = positionWhereCardsStartInCommand; i < commandElements.Length; ++i)
+            for (int i = 0; i < cardsInCommandCount; ++i)
             {
-                targetPlayer.LearnCardColor(color, int.Parse(commandElements[i]));
-                if (!targetPlayer.AreCalledCardCharacteristicsTrue(int.Parse(commandElements[i])))
+                targetPlayer.LearnCardColor(color, cardsPositionsInHand[i]);
+                if (!targetPlayer.AreCalledCardCharacteristicsTrue(cardsPositionsInHand[i]))
                 {
                     endGame();
                    // break;
@@ -328,10 +339,10 @@ namespace kontur
 
         //public void PlayCommand(string[] commandElements, Player player)
         //public int PlayCommand(string[] commandElements, Player player)
-        private string PlayCommand(string[] commandElements, Player player)
+        private string PlayCommand(int position, Player player)
         {
-            var cardPositionInCommand = 2;
-            var card = player.PlayCard(int.Parse(commandElements[cardPositionInCommand]));
+            //var cardPositionInCommand = 2;
+            var card = player.PlayCard(position);
             if (table.CanCardBePlaced(card))
             {
                 if (IsTurnRisky(card))
@@ -347,17 +358,16 @@ namespace kontur
         }
 
         // public void DropCommand(string[] commandElements, Player player)
-        public void DropCommand(string[] commandElements, Player player)
+        public void DropCommand(int position, Player player)
         {
-            var cardPosition = 2; //Drop card <number>
-            player.DropCard(int.Parse(commandElements[cardPosition]));
+            player.DropCard(position);
         }
 
         public void GameProcess(string command)
         {
             if (!gameIsOver)
             {
-                if (MakeTurn(command) == "Good turn")//может, пусть лучше возвращает строки
+                if (MakeTurn(command) == "Good turn")//может, пусть лучше возвращает строки //сделано
                 {
                     if (table.GetPlayedCardsCount() == Table.MaxTableSize || deck.GetCurrentDeckSize() == 0)
                     {
@@ -423,8 +433,13 @@ namespace kontur
 
     class CardParser
     {
-        private const int colorPositionInAbbreviation = 0;
-        private const int rankPositionInAbbreviation = 1;
+        private const int colorPositionInAbbreviation = 0; //Card: CR, C - first letter of color, R - rank
+        private const int rankPositionInAbbreviation = 1;  //for example: R1
+        private const int colorPositionInTellCommand = 2; //Tell color/rank <color/rank> for card <cards>
+        private const int rankPositionInTellCommand = 2;    
+        private const int positionWhereCardStartsInPlayAndDropCommand = 2;
+        private const int positionWhereCardsStartInTellCommand = 5;
+
         static public Card GetCardFromAbbreviation(string cardAbbreviation)
         {
             string color = "";
@@ -449,6 +464,35 @@ namespace kontur
 
             }
             return new Card(int.Parse(cardAbbreviation[rankPositionInAbbreviation].ToString()), color); //подумать про именование констант
+        }
+
+        static public Tuple<int, List<int>> GetRankAndCardsPositions(string command)
+        {
+            List<int> positions = new List<int>();
+            var wordsInCommand = command.Split(' ');
+            int rank = int.Parse(wordsInCommand[rankPositionInTellCommand]);
+            for (int i = positionWhereCardsStartInTellCommand; i < wordsInCommand.Count(); ++i)
+            {
+                positions.Add(int.Parse(wordsInCommand[i]));
+            }
+            return Tuple.Create(rank, positions);
+        }
+
+        static public Tuple<string, List<int>> GetColorAndCardsPositions(string command)
+        {
+            List<int> positions = new List<int>();
+            var wordsInCommand = command.Split(' ');
+            string color = wordsInCommand[colorPositionInTellCommand];
+            for (int i = positionWhereCardsStartInTellCommand; i < wordsInCommand.Count(); ++i)
+            {
+                positions.Add(int.Parse(wordsInCommand[i]));
+            }
+            return Tuple.Create(color, positions);
+        }
+
+        static public int GetCardPosition(string command)
+        {
+            return int.Parse(command.Split(' ')[positionWhereCardStartsInPlayAndDropCommand]);
         }
     }
 

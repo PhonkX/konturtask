@@ -6,18 +6,18 @@ namespace kontur
 {
     class Card
     {
-        public int rank
+        public int Rank
         {
             get;
         }
 
-        public string color
+        public string Color
         {
             get;
         }
 
-        public string calledColor;
-        public int calledRank;
+        public string CalledColor;
+        public int CalledRank;
 
         public List<int> availableRanks
         {
@@ -28,14 +28,14 @@ namespace kontur
             get;
         }
 
-        public Card(int rank1, string color1)
+        public Card(int rank, string color)
         {
-            rank = rank1;
-            color = color1;
+            this.Rank = rank;
+            this.Color = color;
             availableRanks = new List<int>(new int[] { 1, 2, 3, 4, 5 });
             availableColors = new List<string>(new string[] { "Red", "Blue", "Green", "Yellow", "White" });
-            calledColor = "";
-            calledRank = -1;
+            CalledColor = "";
+            CalledRank = -1;
         }
 
 
@@ -43,31 +43,31 @@ namespace kontur
         {
             availableRanks.Remove(rank);
             if (availableRanks.Count() == 1)
-                TryAddRealRank();
+                AddRealRank();
         }
 
         public void DeleteUnavailableColor(string color)
         {
             availableColors.Remove(color);
             if (availableColors.Count() == 1)
-                TryAddRealColor();
+                AddRealColor();
         }
 
-        private void TryAddRealRank()
+        private void AddRealRank()
         {
-            calledRank = availableRanks[0];
+            CalledRank = availableRanks[0];
         }
 
-        private void TryAddRealColor()
+        private void AddRealColor()
         {
-            calledColor = availableColors[0];
+            CalledColor = availableColors[0];
         }
     }
 
     class Deck
     {
         private Queue<Card> cards = new Queue<Card>();
-        public void AddCard(Card card)//cut the name of method //done
+        public void AddCard(Card card)
         {
             cards.Enqueue(card);
         }
@@ -77,7 +77,7 @@ namespace kontur
             return cards.Dequeue();
         }
 
-        public int CurrentDeckSize()
+        public int GetCurrentDeckSize()
         {
             return cards.Count();
         }
@@ -94,10 +94,10 @@ namespace kontur
             hand = new List<Card>();
             deck = deck1;
             for (int i = 0; i < maxHandSize; ++i)
-                TakeCardFromDeck(deck.GiveTopCardToPlayer());
+                TakeCard(deck.GiveTopCardToPlayer());
         }
 
-        public void TakeCardFromDeck(Card card)//Its not neccesarry to tell from where you take the card //may be from other player?
+        public void TakeCard(Card card)
         {
             hand.Add(card);
         }
@@ -106,32 +106,32 @@ namespace kontur
         {
             var card = hand[position];
             hand.RemoveAt(position);
-            TakeCardFromDeck(deck.GiveTopCardToPlayer());
+            TakeCard(deck.GiveTopCardToPlayer());
             return card;
         }
 
         public void LearnCardRank(int rank, int position)
         {
-            hand[position].calledRank = rank;
+            hand[position].CalledRank = rank;
         }
 
         public void LearnCardColor(string color, int position)
         {
-            hand[position].calledColor = color;
+            hand[position].CalledColor = color;
         }
 
         public void DropCard(int position)
         {
             hand.RemoveAt(position);
-            TakeCardFromDeck(deck.GiveTopCardToPlayer());
+            TakeCard(deck.GiveTopCardToPlayer());
         }
 
-        public bool DoesOthePlayerTellTruthAboutCard(int cardPosition)//too long
+        public bool AreCalledCardCharacteristicsTrue(int cardPosition)//too long
         {
             var card = hand[cardPosition];
-            if (card.calledRank != -1 && card.rank != card.calledRank)
+            if (card.CalledRank != -1 && card.Rank != card.CalledRank)
                 return false;
-            if (card.calledColor != "" && card.color != card.calledColor)
+            if (card.CalledColor != "" && card.Color != card.CalledColor)
                 return false;
             return true;
         }
@@ -140,27 +140,27 @@ namespace kontur
         {
             foreach (var card in hand)
             {
-                if (card.calledColor != color)
+                if (card.CalledColor != color)
                     card.DeleteUnavailableColor(color);
             }
         }
 
-        public void DeleteUnavailableRank(int rank)//is it neccesary to thell where you delete rank? Why don't just use DeleteUnavailableRank instead?  
-        {//done
+        public void DeleteUnavailableRank(int rank)
+        {
             foreach (var card in hand)
             {
-                if (card.calledRank != rank)
+                if (card.CalledRank != rank)
                     card.DeleteUnavailableRank(rank);
             }
         }
 
         public int GetSameColorCardsCount(string color)
         {
-            return hand.Where(card => card.color == color).Count();
+            return hand.Where(card => card.Color == color).Count();
         }
         public int GetSameRankCardsCount(int rank)
         {
-            return hand.Where(card => card.rank == rank).Count();
+            return hand.Where(card => card.Rank == rank).Count();
         }
     }
 
@@ -170,12 +170,7 @@ namespace kontur
 
         private const int AmountOfColors = 5;
         private const int MaxCardRank = 5;
-        public const int MaxTableSize = AmountOfColors * MaxCardRank;//wrong, try amountOfColors*maxCost //2 more variables? may be
-
-        public int GetCardCount()
-        {
-            return cards.Count;
-        }
+        public const int MaxTableSize = AmountOfColors * MaxCardRank;
 
         public void AddCardToTable(Card card)
         {
@@ -183,13 +178,13 @@ namespace kontur
         }
         public bool CanCardBePlaced(Card card)//wtf //надо! =D
         {
-            var sameColorCards = cards.Where(x => x.color == card.color).OrderBy(x => x.rank);
+            var sameColorCards = cards.Where(x => x.Color == card.Color).OrderBy(x => x.Rank);
             if (sameColorCards.Count() == 0)
             {
-                if (card.rank == 1)
+                if (card.Rank == 1)
                     return true;
             }
-            else if (sameColorCards.Last().rank == card.rank - 1)
+            else if (sameColorCards.Last().Rank == card.Rank - 1)
                 return true;
             else
                 return false;
@@ -198,15 +193,15 @@ namespace kontur
 
         public int GetSameColorCardsCount(string color)
         {
-            return cards.Where(card => card.color == color).Count();
+            return cards.Where(card => card.Color == color).Count();
 
         }
         public int GetCardsWithPreviousRankCount(int rank)
         {
-            return cards.Where(card => card.rank == rank).Count();
+            return cards.Where(card => card.Rank == rank).Count();
         }
 
-        public int GetPlayedCardsCount()//why dont use Get
+        public int GetPlayedCardsCount()
         {
             return cards.Count;
         }
@@ -214,12 +209,12 @@ namespace kontur
 
     class Game
     {
-        Player[] players;// = new Player[2];
+        Player[] players;
         Table table = new Table();
         Deck deck = new Deck();
         int turnCount;
-        int riskyTurnsCount;// = 0;
-        bool gameIsOver;// = false;
+        int riskyTurnsCount;
+        bool gameIsOver;
 
         public Game()
         {
@@ -230,21 +225,22 @@ namespace kontur
         {
             players = new Player[2];
             turnCount = 0;
-            var cards = startCommand.Split(' ');
-            const int cardStartPosition = 5; //в строке "Start new game with new deck ..." 5 слов =)  
-            for (int i = cardStartPosition; i < cards.Length; ++i)
+            var cards = startCommand.Split(' ');    // назвать по другому
+            const int cardsStartPositionInCommand = 5; //"Start new game with new deck <card>" - 5 words before cards  
+            for (int i = cardsStartPositionInCommand; i < cards.Length; ++i)
             {
                 deck.AddCard(CardParser.GetCardFromAbbreviation(cards[i]));
             }
-            players[0] = new Player(deck);//wtf, why you use 'deck' from class definition //taking card
+            players[0] = new Player(deck);//wtf, why you use 'deck' from class definition //dependency injection, yo!
             players[1] = new Player(deck);
             riskyTurnsCount = 0;
         }
 
         //private void MakeTurn(string command)
-        private int MakeTurn(string command)
+        //private int MakeTurn(string command)
+        private string MakeTurn(string command)
         {
-            int gameFinishStatus = 0; //0, if game continues, 1, if game is finished;
+            string turnStatus = "Good turn"; //"Good turn", if turn is correct, 1, "Bad turn", if turn is incorrect
             var currentPlayer = players[turnCount % 2];
             var nextPlayer = players[(turnCount + 1) % 2];
             turnCount++;
@@ -254,104 +250,116 @@ namespace kontur
             {
                 if (command.Contains("rank"))
                 {
-                    gameFinishStatus = TellRankCommand(commandElements, nextPlayer);
+                    turnStatus = TellRankCommand(commandElements, nextPlayer);
                 }
                 if (command.Contains("color"))
                 {
-                    gameFinishStatus = TellColorCommand(commandElements, nextPlayer);
+                    turnStatus = TellColorCommand(commandElements, nextPlayer);
                 }
             }
 
             if (command.Contains("Play"))
             {
-                gameFinishStatus = PlayCommand(commandElements, currentPlayer);
+                turnStatus = PlayCommand(commandElements, currentPlayer);
             }
 
             if (command.Contains("Drop"))
             {
-                gameFinishStatus = DropCommand(commandElements, currentPlayer); //для единообразия
+                DropCommand(commandElements, currentPlayer);
             }
-            return gameFinishStatus;
+            return turnStatus;
         }
 
         // public void TellRankCommand(string[] commandElements, Player targetPlayer)
-        public int TellRankCommand(string[] commandElements, Player targetPlayer)
+        //public int TellRankCommand(string[] commandElements, Player targetPlayer)//передавать ранг и карты вместо строки
+        private string TellRankCommand(string[] commandElements, Player targetPlayer)
         {
-            const int rankPosition = 2;//too short, can't understand what it does
-            const int rankStartPosition = 5; // Tell rank <...> for cards <...>
-            int rank = int.Parse(commandElements[rankPosition]);
-            for (int i = rankStartPosition; i < commandElements.Length; ++i)
+            const int rankPositionInCommand = 2;//too short, can't understand what it does
+            const int positionWhereCardsStartInCommand = 5; // Tell rank <...> for cards <...>
+            int rank = int.Parse(commandElements[rankPositionInCommand]);
+            int cardsInCommandCount = commandElements.Length - positionWhereCardsStartInCommand;
+            if (targetPlayer.GetSameRankCardsCount(rank) != cardsInCommandCount)
             {
-                targetPlayer.LearnCardRank(rank, int.Parse(commandElements[i]));
-                if (targetPlayer.GetSameRankCardsCount(rank) != commandElements.Length - rankStartPosition ||
-                    !targetPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                endGame();
+                return "Bad turn";
+            }
+            for (int i = positionWhereCardsStartInCommand; i < commandElements.Length; ++i)
+            {
+                targetPlayer.LearnCardRank(rank, int.Parse(commandElements[i]));   
+                if (!targetPlayer.AreCalledCardCharacteristicsTrue(int.Parse(commandElements[i])))
                 {
                     endGame();
                     //break;
-                    return 1;
+                    return "Bad turn";
                 }
 
             }
             targetPlayer.DeleteUnavailableRank(rank);
-            return 0;
+            return "Good turn";
         }
 
         //public void TellColorCommand(string[] commandElements, Player targetPlayer)//we can call player as currentplayer //smth done
-        public int TellColorCommand(string[] commandElements, Player targetPlayer)
+        //public int TellColorCommand(string[] commandElements, Player targetPlayer)
+        private string TellColorCommand(string[] commandElements, Player targetPlayer)
         {
             const int colorPositionInCommand = 2; //Tell color <Color> for cards <...>
-            const int colorStartPosition = 5;
+            const int positionWhereCardsStartInCommand = 5;
             var color = commandElements[colorPositionInCommand];
-            for (int i = colorStartPosition; i < commandElements.Length; ++i)
+            int cardsInCommandCount = commandElements.Length - positionWhereCardsStartInCommand;
+            if (targetPlayer.GetSameColorCardsCount(color) != cardsInCommandCount)
+            {
+                endGame();
+                return "Bad turn";
+            }
+            for (int i = positionWhereCardsStartInCommand; i < commandElements.Length; ++i)
             {
                 targetPlayer.LearnCardColor(color, int.Parse(commandElements[i]));
-                if (targetPlayer.GetSameColorCardsCount(color) != commandElements.Length - colorStartPosition ||
-                    !targetPlayer.DoesOthePlayerTellTruthAboutCard(int.Parse(commandElements[i])))
+                if (!targetPlayer.AreCalledCardCharacteristicsTrue(int.Parse(commandElements[i])))
                 {
                     endGame();
                    // break;
-                    return 1;
+                    return "Bad turn";
                 }
 
             }
             targetPlayer.DeleteUnavailableColor(color);
-            return 0;
+            return "Good turn";
         }
 
         //public void PlayCommand(string[] commandElements, Player player)
-        public int PlayCommand(string[] commandElements, Player player)
+        //public int PlayCommand(string[] commandElements, Player player)
+        private string PlayCommand(string[] commandElements, Player player)
         {
             var cardPositionInCommand = 2;
             var card = player.PlayCard(int.Parse(commandElements[cardPositionInCommand]));
-            if (IsPlayCorrect(card))
+            if (table.CanCardBePlaced(card))
             {
                 if (IsTurnRisky(card))
                     riskyTurnsCount++;
                 table.AddCardToTable(card);
-                return 0;
+                return "Good turn";
             }
             else
             {
                 endGame();
-                return 1;
+                return "Bad turn";
             }
         }
 
         // public void DropCommand(string[] commandElements, Player player)
-        public int DropCommand(string[] commandElements, Player player)
+        public void DropCommand(string[] commandElements, Player player)
         {
             var cardPosition = 2; //Drop card <number>
             player.DropCard(int.Parse(commandElements[cardPosition]));
-            return 0;
         }
 
         public void GameProcess(string command)
         {
             if (!gameIsOver)
             {
-                if (MakeTurn(command) == 0)
+                if (MakeTurn(command) == "Good turn")//может, пусть лучше возвращает строки
                 {
-                    if (table.GetCardCount() == Table.MaxTableSize || deck.CurrentDeckSize() == 0)
+                    if (table.GetPlayedCardsCount() == Table.MaxTableSize || deck.GetCurrentDeckSize() == 0)
                     {
                         endGame();
                         return;
@@ -361,24 +369,24 @@ namespace kontur
 
         }
 
-        private bool IsPlayCorrect(Card card)
+     /*   private bool IsPlayCorrect(Card card)//подумать про то, чтобы убрать метод
         {
-            return table.CanCardBePlaced(card);
-        }
+            return table.CanCardBePlaced(card); // зачем 2 метода для одной задачи
+        }*/
 
-        private bool IsTurnRisky(Card card)//ENGLISH MOTHERFUCKER, use risky instead //done
+        private bool IsTurnRisky(Card card)
         {
             bool isTurnRisky = true;
-
-            if (card.calledRank == 1 && table.GetPlayedCardsCount() == 0)
+            if (card.CalledRank == 1 && table.GetPlayedCardsCount() == 0)
                 isTurnRisky = false;
-            if (card.calledRank != -1)
+            if (card.CalledRank != -1)
             {
-                if (card.calledColor != "")
+                if (card.CalledColor != "")
                     isTurnRisky = false;
                 else
                 {
-                    if (table.GetCardsWithPreviousRankCount(card.rank) == 5)
+                    if (table.GetCardsWithPreviousRankCount(card.Rank) == 5) //спросить, как правильно с точки зрения грамматики
+                        //подумать про то, как обозначить константы
                     {
                         isTurnRisky = false;
                     }
@@ -387,29 +395,25 @@ namespace kontur
                         bool canWeAssumeCard = true;
                         foreach (var availableColor in card.availableColors)
                         {
-                            if (!table.CanCardBePlaced(new Card(card.rank, availableColor)))
+                            if (!table.CanCardBePlaced(new Card(card.Rank, availableColor)))
                             {
                                 canWeAssumeCard = false;
-                                break;
+                                break; //зачем делать брэйк, если найден вариант карты, который не может быть сыгран? Разобраться!
                             }
                         }
                         isTurnRisky = !canWeAssumeCard;
                     }
                 }
             }
-
             return isTurnRisky;
         }
 
         private void endGame()
         {
-          //  if (!gameIsOver)
-         //   {
-                gameIsOver = true;
-                WriteGameInformation();
-         //   }
-
+            gameIsOver = true;
+            WriteGameInformation();
         }
+
         private void WriteGameInformation()
         {
             Console.WriteLine("Turn: {0}, cards: {1}, with risk: {2}",
@@ -419,10 +423,12 @@ namespace kontur
 
     class CardParser
     {
+        private const int colorPositionInAbbreviation = 0;
+        private const int rankPositionInAbbreviation = 1;
         static public Card GetCardFromAbbreviation(string cardAbbreviation)
         {
             string color = "";
-            switch (cardAbbreviation[0])
+            switch (cardAbbreviation[colorPositionInAbbreviation])
             {
                 case 'R':
                     color = "Red";
@@ -442,7 +448,7 @@ namespace kontur
                 default: break;
 
             }
-            return new Card(int.Parse(cardAbbreviation[1].ToString()), color);
+            return new Card(int.Parse(cardAbbreviation[rankPositionInAbbreviation].ToString()), color); //подумать про именование констант
         }
     }
 
@@ -451,7 +457,7 @@ namespace kontur
     {
         static void Main(string[] args)
         {
-            Game game = new Game();
+            Game game = new Game();//убрать пустые конструкторы //не получится
             string command;
             while ((command = Console.ReadLine()) != null)
             {
